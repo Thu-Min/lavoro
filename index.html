@@ -162,39 +162,51 @@
 
       function createTask() {
         console.time("createTask");
-        const taskTitle = document.getElementById("taskTitle").value;
-        const taskDescription =
-          document.getElementById("taskDescription").value;
-        const taskDueDate = document.getElementById("taskDueDate").value;
-        const taskPriority = document.getElementById("taskPriority").value;
-        const taskStatus = document.getElementById("taskStatus").value;
-        const taskAssignee = document.getElementById("taskAssignee").value;
+        try {
+          const taskTitle = document.getElementById("taskTitle").value;
+          const taskDescription =
+            document.getElementById("taskDescription").value;
+          const taskDueDate = document.getElementById("taskDueDate").value;
+          const currentDate = new Date().toISOString().split("T")[0];
+          if (new Date(taskDueDate) < new Date(currentDate)) {
+            throw new Error("Due date must be a future date.");
+          }
+          const taskPriority = document.getElementById("taskPriority").value;
+          const taskStatus = document.getElementById("taskStatus").value;
+          const taskAssignee = document.getElementById("taskAssignee").value;
 
-        const task = {
-          id: Date.now(),
-          title: taskTitle,
-          description: taskDescription,
-          dueDate: taskDueDate,
-          priority: taskPriority,
-          status: taskStatus,
-          assignee: taskAssignee,
-          createdDate: new Date().toISOString(),
-          updatedDate: new Date().toISOString(),
-        };
+          if (!taskTitle || !taskDueDate || !taskPriority || !taskStatus) {
+            throw new Error("Please fill in all required fields.");
+          }
 
-        let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-        tasks.push(task);
-        localStorage.setItem("tasks", JSON.stringify(tasks));
+          const task = {
+            id: Date.now(),
+            title: taskTitle,
+            description: taskDescription,
+            dueDate: taskDueDate,
+            priority: taskPriority,
+            status: taskStatus,
+            assignee: taskAssignee,
+            createdDate: new Date().toISOString(),
+            updatedDate: new Date().toISOString(),
+          };
 
-        document.getElementById("taskTitle").value = "";
-        document.getElementById("taskDescription").value = "";
-        document.getElementById("taskDueDate").value = "";
-        document.getElementById("taskPriority").value = "low";
-        document.getElementById("taskStatus").value = "pending";
-        document.getElementById("taskAssignee").value = "";
+          let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+          tasks.push(task);
+          localStorage.setItem("tasks", JSON.stringify(tasks));
 
-        renderTasks();
-        hideCreateTaskModal();
+          document.getElementById("taskTitle").value = "";
+          document.getElementById("taskDescription").value = "";
+          document.getElementById("taskDueDate").value = "";
+          document.getElementById("taskPriority").value = "low";
+          document.getElementById("taskStatus").value = "pending";
+          document.getElementById("taskAssignee").value = "";
+
+          renderTasks();
+          hideCreateTaskModal();
+        } catch (error) {
+          alert(error.message);
+        }
         console.timeEnd("createTask");
         console.log("Time complexity of createTask: O(n)");
       }
@@ -204,46 +216,52 @@
         const taskList = document.getElementById("taskList");
         taskList.innerHTML = "";
 
-        const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+        try {
+          const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
-        if (tasks.length === 0) {
-          taskList.innerHTML =
-            "<p class='bg-red-400 w-full p-5 text-center'>No tasks available</p>";
-          console.timeEnd("renderTasks");
-          console.log("Time complexity of renderTasks: O(1)");
-          return;
-        }
+          if (tasks.length === 0) {
+            taskList.innerHTML =
+              "<p class='bg-red-400 w-full p-5 text-center'>No tasks available</p>";
+            console.timeEnd("renderTasks");
+            console.log("Time complexity of renderTasks: O(1)");
+            return;
+          }
 
-        const minHeap = new MinHeap();
-        tasks.forEach((task) => minHeap.insert(task));
+          const minHeap = new MinHeap();
+          tasks.forEach((task) => minHeap.insert(task));
 
-        while (!minHeap.isEmpty()) {
-          const task = minHeap.extractMin();
-          const taskItem = document.createElement("div");
-          taskItem.classList.add("mb-2");
+          while (!minHeap.isEmpty()) {
+            const task = minHeap.extractMin();
+            const taskItem = document.createElement("div");
+            taskItem.classList.add("mb-2");
 
-          taskItem.innerHTML = `
+            taskItem.innerHTML = `
         <div class="flex justify-between items-center border-b-2 pb-3">
         <div>
-          <h4 class="font-bold">${task.title}</h4>
-          <p>${task.description}</p>
-          <p>Due: ${task.dueDate}</p>
-          <p>Priority: ${task.priority}</p>
-          <p>Status: ${task.status}</p>
-          <p>Assignee: ${task.assignee}</p>
+        <h4 class="font-bold">${task.title}</h4>
+        <p>${task.description}</p>
+        <p>Due: ${task.dueDate}</p>
+        <p>Priority: ${task.priority}</p>
+        <p>Status: ${task.status}</p>
+        <p>Assignee: ${task.assignee}</p>
         </div>
         <div>
-          <button class="bg-yellow-500 text-white px-2 py-1 rounded mr-2 cursor-pointer" onclick="updateTask(${task.id})">
-          Edit
-          </button>
-          <button class="bg-red-500 text-white px-2 py-1 rounded cursor-pointer" onclick="deleteTask(${task.id})">
-          Delete
-          </button>
+        <button class="bg-yellow-500 text-white px-2 py-1 rounded mr-2 cursor-pointer" onclick="updateTask(${task.id})">
+        Edit
+        </button>
+        <button class="bg-red-500 text-white px-2 py-1 rounded cursor-pointer" onclick="deleteTask(${task.id})">
+        Delete
+        </button>
         </div>
         </div>
       `;
 
-          taskList.appendChild(taskItem);
+            taskList.appendChild(taskItem);
+          }
+        } catch (error) {
+          taskList.innerHTML =
+            "<p class='bg-red-400 w-full p-5 text-center'>Error loading tasks</p>";
+          console.error(error);
         }
         console.timeEnd("renderTasks");
         console.log("Time complexity of renderTasks: O(n log n)");
@@ -251,18 +269,23 @@
 
       function searchTasks() {
         console.time("searchTasks");
-        const searchQuery = document
-          .getElementById("search")
-          .value.toLowerCase();
-        const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+        try {
+          const searchQuery = document
+            .getElementById("search")
+            .value.toLowerCase();
+          const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
-        const taskMap = new Map(tasks.map((task) => [task.id, task]));
-        const filteredTasks = Array.from(taskMap.values()).filter(
-          (task) =>
-            task.title.toLowerCase().includes(searchQuery) ||
-            task.description.toLowerCase().includes(searchQuery)
-        );
-        renderFilteredTasks(filteredTasks);
+          const taskMap = new Map(tasks.map((task) => [task.id, task]));
+          const filteredTasks = Array.from(taskMap.values()).filter(
+            (task) =>
+              task.title.toLowerCase().includes(searchQuery) ||
+              task.description.toLowerCase().includes(searchQuery)
+          );
+          renderFilteredTasks(filteredTasks);
+        } catch (error) {
+          alert("Error searching tasks");
+          console.error(error);
+        }
         console.timeEnd("searchTasks");
         console.log("Time complexity of searchTasks: O(n)");
         console.log("Space complexity of searchTasks: O(1)");
@@ -273,118 +296,145 @@
         const taskList = document.getElementById("taskList");
         taskList.innerHTML = "";
 
-        if (tasks.length === 0) {
-          taskList.innerHTML =
-            "<p class='bg-red-400 w-full p-5 text-center'>No tasks found</p>";
-          console.timeEnd("renderFilteredTasks");
-          console.log("Time complexity of renderFilteredTasks: O(1)");
-          return;
-        }
+        try {
+          if (tasks.length === 0) {
+            taskList.innerHTML =
+              "<p class='bg-red-400 w-full p-5 text-center'>No tasks found</p>";
+            console.timeEnd("renderFilteredTasks");
+            console.log("Time complexity of renderFilteredTasks: O(1)");
+            return;
+          }
 
-        tasks.forEach((task) => {
-          const taskItem = document.createElement("div");
-          taskItem.classList.add("mb-2");
+          tasks.forEach((task) => {
+            const taskItem = document.createElement("div");
+            taskItem.classList.add("mb-2");
 
-          taskItem.innerHTML = `
+            taskItem.innerHTML = `
         <div class="flex justify-between items-center border-b-2 pb-3">
         <div>
-          <h4 class="font-bold">${task.title}</h4>
-          <p>${task.description}</p>
-          <p>Due: ${task.dueDate}</p>
-          <p>Priority: ${task.priority}</p>
-          <p>Status: ${task.status}</p>
-          <p>Assignee: ${task.assignee}</p>
+        <h4 class="font-bold">${task.title}</h4>
+        <p>${task.description}</p>
+        <p>Due: ${task.dueDate}</p>
+        <p>Priority: ${task.priority}</p>
+        <p>Status: ${task.status}</p>
+        <p>Assignee: ${task.assignee}</p>
         </div>
         <div>
-          <button class="bg-yellow-500 text-white px-2 py-1 rounded mr-2 cursor-pointer" onclick="updateTask(${task.id})">
-          Edit
-          </button>
-          <button class="bg-red-500 text-white px-2 py-1 rounded cursor-pointer" onclick="deleteTask(${task.id})">
-          Delete
-          </button>
+        <button class="bg-yellow-500 text-white px-2 py-1 rounded mr-2 cursor-pointer" onclick="updateTask(${task.id})">
+        Edit
+        </button>
+        <button class="bg-red-500 text-white px-2 py-1 rounded cursor-pointer" onclick="deleteTask(${task.id})">
+        Delete
+        </button>
         </div>
         </div>
       `;
 
-          taskList.appendChild(taskItem);
-        });
+            taskList.appendChild(taskItem);
+          });
+        } catch (error) {
+          taskList.innerHTML =
+            "<p class='bg-red-400 w-full p-5 text-center'>Error rendering tasks</p>";
+          console.error(error);
+        }
         console.timeEnd("renderFilteredTasks");
         console.log("Time complexity of renderFilteredTasks: O(n)");
       }
 
       function filterTasks() {
         console.time("filterTasks");
-        const filter = document.getElementById("filter").value;
-        const order = document.getElementById("order").value;
+        try {
+          const filter = document.getElementById("filter").value;
+          const order = document.getElementById("order").value;
 
-        let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+          let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
-        if (filter === "dueDate") {
-          tasks.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-        } else if (filter === "priority") {
-          const priorityOrder = { low: 3, medium: 2, high: 1 };
-          tasks.sort(
-            (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]
-          );
-        } else if (filter === "createdDate") {
-          tasks.sort(
-            (a, b) => new Date(a.createdDate) - new Date(b.createdDate)
-          );
-        } else if (filter === "status") {
-          const statusOrder = { pending: 1, inProgress: 2, completed: 3 };
-          tasks.sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
+          if (filter === "dueDate") {
+            tasks.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+          } else if (filter === "priority") {
+            const priorityOrder = { low: 3, medium: 2, high: 1 };
+            tasks.sort(
+              (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]
+            );
+          } else if (filter === "createdDate") {
+            tasks.sort(
+              (a, b) => new Date(a.createdDate) - new Date(b.createdDate)
+            );
+          } else if (filter === "status") {
+            const statusOrder = { pending: 1, inProgress: 2, completed: 3 };
+            tasks.sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
+          }
+
+          if (order === "desc") {
+            tasks.reverse();
+          }
+
+          renderFilteredTasks(tasks);
+        } catch (error) {
+          alert("Error filtering tasks");
+          console.error(error);
         }
-
-        if (order === "desc") {
-          tasks.reverse();
-        }
-
-        renderFilteredTasks(tasks);
         console.timeEnd("filterTasks");
         console.log("Time complexity of filterTasks: O(n log n)");
       }
 
       function updateTask(taskId) {
         console.time("updateTask");
-        const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-        const task = tasks.find((task) => task.id === taskId);
+        try {
+          const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+          const task = tasks.find((task) => task.id === taskId);
 
-        if (task) {
-          document.getElementById("taskTitle").value = task.title;
-          document.getElementById("taskDescription").value = task.description;
-          document.getElementById("taskDueDate").value = task.dueDate;
-          document.getElementById("taskPriority").value = task.priority;
-          document.getElementById("taskStatus").value = task.status;
-          document.getElementById("taskAssignee").value = task.assignee;
+          if (task) {
+            document.getElementById("taskTitle").value = task.title;
+            document.getElementById("taskDescription").value = task.description;
+            document.getElementById("taskDueDate").value = task.dueDate;
+            document.getElementById("taskPriority").value = task.priority;
+            document.getElementById("taskStatus").value = task.status;
+            document.getElementById("taskAssignee").value = task.assignee;
 
-          showCreateTaskModal();
+            showCreateTaskModal();
 
-          document
-            .getElementById("createTaskModal")
-            .querySelector(".bg-blue-500").onclick = function () {
-            task.title = document.getElementById("taskTitle").value;
-            task.description = document.getElementById("taskDescription").value;
-            task.dueDate = document.getElementById("taskDueDate").value;
-            task.priority = document.getElementById("taskPriority").value;
-            task.status = document.getElementById("taskStatus").value;
-            task.assignee = document.getElementById("taskAssignee").value;
-            task.updatedDate = new Date().toISOString();
+            document
+              .getElementById("createTaskModal")
+              .querySelector(".bg-blue-500").onclick = function () {
+              try {
+                task.title = document.getElementById("taskTitle").value;
+                task.description =
+                  document.getElementById("taskDescription").value;
+                task.dueDate = document.getElementById("taskDueDate").value;
+                task.priority = document.getElementById("taskPriority").value;
+                task.status = document.getElementById("taskStatus").value;
+                task.assignee = document.getElementById("taskAssignee").value;
+                task.updatedDate = new Date().toISOString();
 
-            localStorage.setItem("tasks", JSON.stringify(tasks));
-            renderTasks();
-            hideCreateTaskModal();
-            console.timeEnd("updateTask");
-            console.log("Time complexity of updateTask: O(n)");
-          };
+                localStorage.setItem("tasks", JSON.stringify(tasks));
+                renderTasks();
+                hideCreateTaskModal();
+              } catch (error) {
+                alert("Error updating task");
+                console.error(error);
+              }
+              console.timeEnd("updateTask");
+              console.log("Time complexity of updateTask: O(n)");
+            };
+          }
+        } catch (error) {
+          alert("Error loading task for update");
+          console.error(error);
         }
       }
 
       function deleteTask(taskId) {
         console.time("deleteTask");
-        let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-        tasks = tasks.filter((task) => task.id !== taskId);
-        localStorage.setItem("tasks", JSON.stringify(tasks));
-        renderTasks();
+        try {
+          let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+          tasks = tasks.filter((task) => task.id !== taskId);
+          localStorage.setItem("tasks", JSON.stringify(tasks));
+          renderTasks();
+        } catch (error) {
+          alert("Error deleting task");
+          console.error(error);
+        }
         console.timeEnd("deleteTask");
         console.log("Time complexity of deleteTask: O(n)");
       }
