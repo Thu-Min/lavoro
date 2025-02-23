@@ -123,7 +123,6 @@
             <option value="dueDate">Due Date</option>
             <option value="priority">Priority</option>
             <option value="status">Status</option>
-            <option value="createdDate">Created Date</option>
           </select>
           <select
             id="order"
@@ -355,10 +354,6 @@
             const priorityOrder = { low: 3, medium: 2, high: 1 };
             tasks.sort(
               (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]
-            );
-          } else if (filter === "createdDate") {
-            tasks.sort(
-              (a, b) => new Date(a.createdDate) - new Date(b.createdDate)
             );
           } else if (filter === "status") {
             const statusOrder = { pending: 1, inProgress: 2, completed: 3 };
